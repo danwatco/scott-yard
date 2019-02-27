@@ -4,16 +4,77 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.requireNonNull;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import uk.ac.bris.cs.gamekit.graph.Graph;
+import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.DOUBLE;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.SECRET;
+import java.util.function.Consumer;
+import uk.ac.bris.cs.gamekit.graph.Edge;
+import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
+
+	List<Boolean> rounds;
+	Graph<Integer, Transport> graph;
+	List<ScotlandYardPlayer> players = new ArrayList<>();
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 			PlayerConfiguration... restOfTheDetectives) {
 		// TODO
+		this.rounds = requireNonNull(rounds);
+		this.graph = requireNonNull(graph);
+
+		if(rounds.isEmpty()){
+			throw new IllegalArgumentException("Empty rounds");
+		}
+		if(graph.isEmpty()){
+			throw new IllegalArgumentException("Empty map");
+		}
+		if(mrX.colour != BLACK){
+			throw new IllegalArgumentException("MrX should be black");
+		}
+
+		ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+		for (PlayerConfiguration c : restOfTheDetectives){
+			configurations.add(requireNonNull(c));
+		}
+		configurations.add(0, firstDetective);
+		configurations.add(0, mrX);
+
+		Set<Integer> set = new HashSet<>();
+		for (PlayerConfiguration c : configurations){
+			if(set.contains(c.location)){
+				throw new IllegalArgumentException("Duplicate location");
+			}
+			set.add(c.location);
+		}
+
+		Set<Colour> colourSet = new HashSet<>();
+		for (PlayerConfiguration c : configurations){
+			if(set.contains(c.colour)){
+				throw new IllegalArgumentException("Duplicate colour");
+			}
+			set.add(c.location);
+		}
+		
+
 	}
 
 	@Override
