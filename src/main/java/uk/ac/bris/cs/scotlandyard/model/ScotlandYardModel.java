@@ -8,6 +8,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
@@ -26,9 +27,11 @@ import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
 
-	List<Boolean> rounds;
-	Graph<Integer, Transport> graph;
-	List<ScotlandYardPlayer> players = new ArrayList<>();
+	private List<Boolean> rounds;
+	private Graph<Integer, Transport> graph;
+	private List<ScotlandYardPlayer> players = new ArrayList<>();
+	private Colour currentPlayer;
+	private int round;
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
@@ -64,10 +67,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		Set<Colour> colourSet = new HashSet<>();
 		for (PlayerConfiguration c : configurations){
-			if(set.contains(c.colour)){
+			if(colourSet.contains(c.colour)){
 				throw new IllegalArgumentException("Duplicate colour");
 			}
-			set.add(c.location);
+			colourSet.add(c.colour);
 		}
 
 		for (PlayerConfiguration c : configurations){
@@ -76,14 +79,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					throw new IllegalArgumentException("Detective has wrong tickets");
 				}
 			}
-			for(Ticket t : Ticket.values()){
-				if(c.tickets.containsKey(t)){
-				} else {
-					throw new IllegalArgumentException("Missing tickets");
-				}
+			if(c.tickets.size() != Ticket.values().length){
+				throw new IllegalArgumentException("Missing tickets");
 			}
 		}
 
+		for(PlayerConfiguration c : configurations){
+			ScotlandYardPlayer p = new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets);
+			players.add(p);
+		}
+
+		this.currentPlayer = BLACK;
+		this.round = 1;
 
 	}
 
@@ -114,7 +121,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public List<Colour> getPlayers() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		List<Colour> coloursList = new ArrayList<>();
+		for(ScotlandYardPlayer p : players){
+			coloursList.add(p.colour());
+		}
+		return Collections.unmodifiableList(coloursList);
+
 	}
 
 	@Override
@@ -138,31 +150,31 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public boolean isGameOver() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return false;
 	}
 
 	@Override
 	public Colour getCurrentPlayer() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return currentPlayer;
 	}
 
 	@Override
 	public int getCurrentRound() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return round;
 	}
 
 	@Override
 	public List<Boolean> getRounds() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return Collections.unmodifiableList(this.rounds);
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return new ImmutableGraph<Integer, Transport>(this.graph);
 	}
 
 }
