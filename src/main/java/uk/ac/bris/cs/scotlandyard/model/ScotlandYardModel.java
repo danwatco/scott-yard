@@ -40,16 +40,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		this.rounds = requireNonNull(rounds);
 		this.graph = requireNonNull(graph);
 
+		// Check that neither the graph or rounds are empty
 		if(rounds.isEmpty()){
 			throw new IllegalArgumentException("Empty rounds");
 		}
 		if(graph.isEmpty()){
 			throw new IllegalArgumentException("Empty map");
 		}
+		// Check that MrX is the correct colour
 		if(mrX.colour != BLACK){
 			throw new IllegalArgumentException("MrX should be black");
 		}
 
+		// Create a list of configurations for ease of checking
 		ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
 		for (PlayerConfiguration c : restOfTheDetectives){
 			configurations.add(requireNonNull(c));
@@ -57,6 +60,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		configurations.add(0, firstDetective);
 		configurations.add(0, mrX);
 
+		// Use a set to check there are no duplicate locations
 		Set<Integer> set = new HashSet<>();
 		for (PlayerConfiguration c : configurations){
 			if(set.contains(c.location)){
@@ -65,6 +69,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			set.add(c.location);
 		}
 
+		// Use a set to check there are no duplicate colours
 		Set<Colour> colourSet = new HashSet<>();
 		for (PlayerConfiguration c : configurations){
 			if(colourSet.contains(c.colour)){
@@ -73,24 +78,27 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			colourSet.add(c.colour);
 		}
 
+		// Check that the detectives don't have any illegal tickets
 		for (PlayerConfiguration c : configurations){
 			if(c.colour != BLACK){
 				if(c.tickets.get(DOUBLE) != 0 || c.tickets.get(SECRET) != 0){
 					throw new IllegalArgumentException("Detective has wrong tickets");
 				}
 			}
+			// Check a config contains all tickets - not passing test???
 			if(c.tickets.size() != Ticket.values().length){
 				throw new IllegalArgumentException("Missing tickets");
 			}
 		}
 
+		// Use configurations to add players to list.
 		for(PlayerConfiguration c : configurations){
 			ScotlandYardPlayer p = new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets);
 			players.add(p);
 		}
 
 		this.currentPlayer = BLACK;
-		this.round = 1;
+		this.round = 0;
 
 	}
 
@@ -155,7 +163,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-		// TODO
+		// TODO DONE
 		return currentPlayer;
 	}
 
