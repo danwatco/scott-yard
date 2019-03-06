@@ -150,6 +150,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
         // TODO
+		// Need to implement the hiding of MrX at certain intervals?
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
                 return Optional.of(0);
