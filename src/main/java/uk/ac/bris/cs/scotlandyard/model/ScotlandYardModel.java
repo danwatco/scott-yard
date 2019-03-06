@@ -24,6 +24,8 @@ import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
+import javax.swing.text.html.Option;
+
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
 
@@ -80,15 +82,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
         // Check that the detectives don't have any illegal tickets
         for (PlayerConfiguration c : configurations){
+            // Check a config contains all tickets - not passing test???
+            if(c.tickets.size() != Ticket.values().length){
+                throw new IllegalArgumentException("Missing tickets");
+            }
+
             if(c.colour != BLACK){
                 if(c.tickets.get(DOUBLE) != 0 || c.tickets.get(SECRET) != 0){
                     throw new IllegalArgumentException("Detective has wrong tickets");
                 }
             }
-            // Check a config contains all tickets - not passing test???
-            if(c.tickets.size() != Ticket.values().length){
-                throw new IllegalArgumentException("Missing tickets");
-            }
+
         }
 
         // Use configurations to add players to list.
@@ -128,7 +132,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
     @Override
     public List<Colour> getPlayers() {
-        // TODO
+        // TODO DONE
         List<Colour> coloursList = new ArrayList<>();
         for(ScotlandYardPlayer p : players){
             coloursList.add(p.colour());
@@ -140,19 +144,32 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public Set<Colour> getWinningPlayers() {
         // TODO
-        throw new RuntimeException("Implement me");
+        return Collections.unmodifiableSet(emptySet());
     }
 
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
         // TODO
-        throw new RuntimeException("Implement me");
+        for(ScotlandYardPlayer p : players){
+            if(colour == BLACK){
+                return Optional.of(0);
+            } else if(p.colour() == colour){
+                return Optional.of(p.location());
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
     public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
-        // TODO
-        throw new RuntimeException("Implement me");
+        // TODO DONE
+        for(ScotlandYardPlayer p : players){
+            if(p.colour() == colour){
+                int t = p.tickets().get(ticket);
+                return Optional.of(t);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -169,19 +186,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
     @Override
     public int getCurrentRound() {
-        // TODO
+        // TODO DONE
         return round;
     }
 
     @Override
     public List<Boolean> getRounds() {
-        // TODO
+        // TODO DONE
         return Collections.unmodifiableList(this.rounds);
     }
 
     @Override
     public Graph<Integer, Transport> getGraph() {
-        // TODO
+        // TODO DONE
         return new ImmutableGraph<Integer, Transport>(this.graph);
     }
 
