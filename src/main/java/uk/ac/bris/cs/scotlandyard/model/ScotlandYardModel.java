@@ -16,18 +16,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.sun.prism.shader.AlphaOne_Color_Loader;
+import org.apache.commons.lang3.ObjectUtils;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.DOUBLE;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.SECRET;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
+
 import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
+import uk.ac.bris.cs.gamekit.graph.Node;
 
 import javax.swing.text.html.Option;
 
 // TODO implement all methods and pass all tests
-public class ScotlandYardModel implements ScotlandYardGame {
+public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     private List<Boolean> rounds;
     private Graph<Integer, Transport> graph;
@@ -121,7 +124,50 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public void startRotate() {
         // TODO
-        throw new RuntimeException("Implement me");
+        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
+        ScotlandYardPlayer player;
+        if(playerO.isPresent()){
+            player = playerO.get();
+        } else {
+            throw new RuntimeException("Current player does not exist");
+        }
+        Player current = player.player();
+        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
+
+    }
+
+    private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
+        for(ScotlandYardPlayer p : players){
+            if(p.colour() == colour){
+                return Optional.of(p);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Set<Move> validMove(Colour player){
+        Set<Move> s = new HashSet<>();
+        Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
+        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        for(Edge<Integer, Transport> e : edges){
+            for(Transport t : Transport.values()){
+                if(e.data() == t){
+                    if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
+                        TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
+                        s.add(m);
+                    } else {
+                        PassMove m = new PassMove(player);
+                        s.add(m);
+                    }
+                }
+            }
+        }
+        return s;
+    }
+
+    @Override
+    public void accept(Move m){
+        if(isNull(m)) throw new NullPointerException("Move was null");
     }
 
     @Override
