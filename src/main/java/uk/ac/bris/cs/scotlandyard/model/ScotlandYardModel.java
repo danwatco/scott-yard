@@ -152,13 +152,20 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         for(Edge<Integer, Transport> e : edges){
             for(Transport t : Transport.values()){
                 if(e.data() == t){
-                    if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
-                        TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
-                        s.add(m);
+                    if(player != BLACK){
+                        // Logic for Detectives
+                        if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
+                            TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
+                            s.add(m);
+                        } else {
+                            PassMove m = new PassMove(player);
+                            s.add(m);
+                        }
                     } else {
-                        PassMove m = new PassMove(player);
-                        s.add(m);
+                        // Logic for MrX - Doubles & Secrets need to be handled
+
                     }
+
                 }
             }
         }
@@ -168,6 +175,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void accept(Move m){
         if(isNull(m)) throw new NullPointerException("Move was null");
+        if(!validMove(m.colour()).contains(m)) throw new IllegalArgumentException("Move not valid");
     }
 
     @Override
