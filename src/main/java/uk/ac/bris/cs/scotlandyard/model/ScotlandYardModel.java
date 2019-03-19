@@ -42,6 +42,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                              PlayerConfiguration mrX, PlayerConfiguration firstDetective,
                              PlayerConfiguration... restOfTheDetectives) {
         // TODO
+        // makes sure rounds and graph (the map) is set to not null
         this.rounds = requireNonNull(rounds);
         this.graph = requireNonNull(graph);
 
@@ -65,16 +66,16 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         configurations.add(0, firstDetective);
         configurations.add(0, mrX);
 
-        // Use a set to check there are no duplicate locations
-        Set<Integer> set = new HashSet<>();
+        // Use a set to check there are no duplicate locations for starting players
+        Set<Integer> locationSet = new HashSet<>();
         for (PlayerConfiguration c : configurations){
-            if(set.contains(c.location)){
+            if(locationSet.contains(c.location)){
                 throw new IllegalArgumentException("Duplicate location");
             }
-            set.add(c.location);
+            locationSet.add(c.location);
         }
 
-        // Use a set to check there are no duplicate colours
+        // Use a set to check there are no duplicate colours for starting players
         Set<Colour> colourSet = new HashSet<>();
         for (PlayerConfiguration c : configurations){
             if(colourSet.contains(c.colour)){
