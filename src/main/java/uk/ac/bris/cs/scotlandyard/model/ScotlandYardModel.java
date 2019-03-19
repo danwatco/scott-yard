@@ -158,10 +158,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
                 int r = getCurrentRound(); // made this so the if statement isn't so confusing
 
                 if(r == 3 || r == 8 || r == 13 || r == 18 || r == 24){
-                    location = Optional.of(p.location());
-                    return location;
+                    location = Optional.of(p.location()); // updates location with current location
+                    return location; // returns the updated location
                 }
-                else return location;
+                else return location; // only returns the location, doesnt update it
             }
             else if(p.colour() == colour){
                 return Optional.of(p.location());
