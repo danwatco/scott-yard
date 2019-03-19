@@ -150,15 +150,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
         // TODO
-        // if you have changed it to done does it mean the function works? Yeah I think so.
+
+        Optional<Integer> location = Optional.of(0); // Store the location of MrX that players are allowed to see
+
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
                 int r = getCurrentRound(); // made this so the if statement isn't so confusing
-                if(r == 3 || r == 8 || r == 13 || r == 18 || r == 24) return Optional.of(p.location());
-                else return Optional.of(0);
-                // i hope this works lol // Seems okay but not sure if we can test it until we get the game fully
-                // functioning
-            } else if(p.colour() == colour){
+
+                if(r == 3 || r == 8 || r == 13 || r == 18 || r == 24){
+                    location = Optional.of(p.location());
+                    return location;
+                }
+                else return location;
+            }
+            else if(p.colour() == colour){
                 return Optional.of(p.location());
             }
         }
