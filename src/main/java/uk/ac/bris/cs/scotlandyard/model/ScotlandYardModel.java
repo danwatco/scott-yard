@@ -34,6 +34,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
     private List<ScotlandYardPlayer> players = new ArrayList<>();
     private Colour currentPlayer;
     private int round;
+    private int mrXlocation = 0; // Store the location of MrX that players are allowed to see
 
     public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
                              PlayerConfiguration mrX, PlayerConfiguration firstDetective,
@@ -150,18 +151,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
         // TODO
-
-        Optional<Integer> location = Optional.of(0); // Store the location of MrX that players are allowed to see
-
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
                 int r = getCurrentRound(); // made this so the if statement isn't so confusing
-
                 if(r == 3 || r == 8 || r == 13 || r == 18 || r == 24){
-                    location = Optional.of(p.location()); // updates location with current location
-                    return location; // returns the updated location
+                    mrXlocation = p.location(); // updates location with current location
+                    return Optional.of(mrXlocation); // returns the updated location
                 }
-                else return location; // only returns the location, doesnt update it
+                else return Optional.of(mrXlocation); // only returns the location, doesnt update it
             }
             else if(p.colour() == colour){
                 return Optional.of(p.location());
