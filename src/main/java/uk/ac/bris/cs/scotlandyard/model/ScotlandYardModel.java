@@ -149,21 +149,28 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Set<Move> s = new HashSet<>();
         Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        // Loop through each possible edge from the current player location on the map
         for(Edge<Integer, Transport> e : edges){
+            // Loop through each transport and compare to the edge
             for(Transport t : Transport.values()){
                 if(e.data() == t){
                     if(player != BLACK){
                         // Logic for Detectives
+                        // Check if the player has enough tickets to use the current transport
                         if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
                             TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
                             s.add(m);
                         } else {
+                            // If no tickets left add a pass move to the set.
                             PassMove m = new PassMove(player);
                             s.add(m);
                         }
                     } else {
                         // Logic for MrX - Doubles & Secrets need to be handled
-
+                        Set<Move> doubles = doubleMove(player);
+                        Set<Move> secrets = secretMove(player);
+                        s.addAll(doubles);
+                        s.addAll(secrets);
                     }
 
                 }
@@ -171,6 +178,21 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         }
         return s;
     }
+
+    private Set<Move> doubleMove(Colour player){
+        ScotlandYardPlayer mrx = getPlayerFromColour(player).get();
+        int location = mrx.location();
+
+        return emptySet();
+    }
+
+    private Set<Move> secretMove(Colour player){
+        ScotlandYardPlayer mrx = getPlayerFromColour(player).get();
+        int location = mrx.location();
+
+        return emptySet();
+    }
+
 
     @Override
     public void accept(Move m){
