@@ -20,6 +20,7 @@ import com.sun.prism.shader.AlphaOne_Color_Loader;
 import org.apache.commons.lang3.ObjectUtils;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
+import static uk.ac.bris.cs.scotlandyard.model.Colour.BLUE;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
 
 import java.util.function.Consumer;
@@ -167,8 +168,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                         }
                     } else {
                         // Logic for MrX - Doubles & Secrets need to be handled
-                        Set<Move> doubles = doubleMove(player);
-                        Set<Move> secrets = secretMove(player);
+                        Set<Move> doubles = doubleMove(location);
+                        Set<Move> secrets = secretMove(location);
                         s.addAll(doubles);
                         s.addAll(secrets);
                     }
@@ -179,16 +180,14 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         return s;
     }
 
-    private Set<Move> doubleMove(Colour player){
-        ScotlandYardPlayer mrx = getPlayerFromColour(player).get();
-        int location = mrx.location();
+    private Set<Move> doubleMove(Node<Integer> location){
+
 
         return emptySet();
     }
 
-    private Set<Move> secretMove(Colour player){
-        ScotlandYardPlayer mrx = getPlayerFromColour(player).get();
-        int location = mrx.location();
+    private Set<Move> secretMove(Node<Integer> location){
+
 
         return emptySet();
     }
@@ -197,7 +196,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void accept(Move m){
         if(isNull(m)) throw new NullPointerException("Move was null");
-        if(!validMove(m.colour()).contains(m)) throw new IllegalArgumentException("Move not valid");
+        if(validMove(m.colour()).contains(m)) {} else { throw new IllegalArgumentException("Move not valid"); };
     }
 
     @Override
