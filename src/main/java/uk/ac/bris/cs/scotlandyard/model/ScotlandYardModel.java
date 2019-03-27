@@ -1,13 +1,10 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
+import java.net.DatagramPacket;
 import java.util.*;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableSet;
+import static java.util.Collections.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
@@ -148,30 +145,31 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     private Set<Move> validMove(Colour player){
         Set<Move> s = new HashSet<>();
-        Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
-        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        ScotlandYardPlayer p = getPlayerFromColour(player).get();
+        Graph<Integer, Transport> g = graph;
+        Node<Integer> location = g.getNode(p.location());
+        Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
         // Loop through each possible edge from the current player location on the map
         for(Edge<Integer, Transport> e : edges){
             // Loop through each transport and compare to the edge
             for(Transport t : Transport.values()){
                 if(e.data() == t){
-                    if(player != BLACK){
-                        // Logic for Detectives
-                        // Check if the player has enough tickets to use the current transport
-                        if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
-                            TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
-                            s.add(m);
-                        } else {
+                    // Logic for All players
+                    // Check if the player has enough tickets to use the current transport
+                    if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
+                        TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
+                        s.add(m);
+                        if(player.isMrX()){
+                            // Handle double tickets if MrX is playing
+                            Set<Move> doubles = doubleMove(m, location);
+                            s.addAll(doubles);
+                        }
+                    } else {
+                        if(t == Transport.BUS || t == Transport.TAXI || t == Transport.UNDERGROUND){
                             // If no tickets left add a pass move to the set.
                             PassMove m = new PassMove(player);
                             s.add(m);
                         }
-                    } else {
-                        // Logic for MrX - Doubles & Secrets need to be handled
-                        Set<Move> doubles = doubleMove(location);
-                        Set<Move> secrets = secretMove(location);
-                        s.addAll(doubles);
-                        s.addAll(secrets);
                     }
 
                 }
@@ -180,23 +178,32 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         return s;
     }
 
-    private Set<Move> doubleMove(Node<Integer> location){
+    private Set<Move> doubleMove(TicketMove first, Node<Integer> location){
+        Set<Move> moves = new HashSet<>();
+        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        for(Edge<Integer, Transport> e : edges){
+            for(Transport t : Transport.values()){
+                if(e.data() == t){
+                    if(getPlayerTickets(BLACK, fromTransport(t)).get() >= 1){
+                        TicketMove second = new TicketMove(BLACK, fromTransport(t), e.destination().value());
+                        DoubleMove d = new DoubleMove(BLACK, first, second);
+                        moves.add(d);
+                    }
+                }
+            }
+        }
 
 
-        return emptySet();
-    }
-
-    private Set<Move> secretMove(Node<Integer> location){
-
-
-        return emptySet();
+        return moves;
     }
 
 
     @Override
     public void accept(Move m){
         if(isNull(m)) throw new NullPointerException("Move was null");
-        if(validMove(m.colour()).contains(m)) {} else { throw new IllegalArgumentException("Move not valid"); };
+        PassMove test = new PassMove(getCurrentPlayer());
+        //if(!m.equals(test)) throw new IllegalArgumentException("Move not valid");
+        if(validMove(getCurrentPlayer()).contains(m)) {} else { throw new IllegalArgumentException("Move not valid"); };
     }
 
     @Override
