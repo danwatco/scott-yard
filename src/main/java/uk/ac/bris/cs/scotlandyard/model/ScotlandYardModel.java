@@ -130,7 +130,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             throw new RuntimeException("Current player does not exist");
         }
         Player current = player.player();
-        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
+        if(player.isMrX()) System.out.println("Size of set " + validMove(getCurrentPlayer()).size());
+        current.makeMove(this, player.location(), validMove(getCurrentPlayer()), this );
 
     }
 
@@ -146,6 +147,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     private Set<Move> validMove(Colour player){
         Set<Move> s = new HashSet<>();
         ScotlandYardPlayer p = getPlayerFromColour(player).get();
+        Boolean pass = false;
         Graph<Integer, Transport> g = graph;
         Node<Integer> location = g.getNode(p.location());
         Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
@@ -160,40 +162,70 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                         TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
                         s.add(m);
                         if(player.isMrX()){
+                            // Add secret option
+                            Set<Move> secrets = secretMove(location);
+                            s.addAll(secrets);
                             // Handle double tickets if MrX is playing
-                            Set<Move> doubles = doubleMove(m, location);
+                            Set<Move> doubles = doubleMove(m, e.destination(), false);
                             s.addAll(doubles);
                         }
                     } else {
                         if(t == Transport.BUS || t == Transport.TAXI || t == Transport.UNDERGROUND){
                             // If no tickets left add a pass move to the set.
-                            PassMove m = new PassMove(player);
-                            s.add(m);
+                            pass = true;
+                        }
+                        if(player.isMrX()){
+                            if(getPlayerTickets(player, SECRET).get() >= 1){
+                                TicketMove m = new TicketMove(player, SECRET, e.destination().value());
+                                s.add(m);
+                            }
                         }
                     }
 
                 }
             }
         }
+        if(pass && s.isEmpty()) s.add(new PassMove(player));
         return s;
     }
 
-    private Set<Move> doubleMove(TicketMove first, Node<Integer> location){
+    private Set<Move> doubleMove(TicketMove first, Node<Integer> location, boolean secret){
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges){
             for(Transport t : Transport.values()){
                 if(e.data() == t){
                     if(getPlayerTickets(BLACK, fromTransport(t)).get() >= 1){
-                        TicketMove second = new TicketMove(BLACK, fromTransport(t), e.destination().value());
-                        DoubleMove d = new DoubleMove(BLACK, first, second);
-                        moves.add(d);
+                        if(secret){
+                            TicketMove second = new TicketMove(BLACK, SECRET, e.destination().value());
+                            DoubleMove d = new DoubleMove(BLACK, first, second);
+                            moves.add(d);
+                        } else {
+                            TicketMove second = new TicketMove(BLACK, fromTransport(t), e.destination().value());
+                            DoubleMove d = new DoubleMove(BLACK, first, second);
+                            moves.add(d);
+                        }
+
                     }
                 }
             }
         }
 
 
+        return moves;
+    }
+
+    private Set<Move> secretMove(Node<Integer> location){
+        Set<Move> moves = new HashSet<>();
+        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        for(Edge<Integer, Transport> e : edges){
+            if(getPlayerTickets(BLACK, SECRET).get() >= 1){
+                TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
+                moves.add(m);
+                Set<Move> doubles = doubleMove(m, e.destination(), true);
+                moves.addAll(doubles);
+            }
+        }
         return moves;
     }
 
