@@ -152,7 +152,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Node<Integer> location = g.getNode(p.location());
         Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
         // Loop through each possible edge from the current player location on the map
-        for(Edge<Integer, Transport> e : edges){
+        /*for(Edge<Integer, Transport> e : edges){
             // Loop through each transport and compare to the edge
             for(Transport t : Transport.values()){
                 if(e.data() == t){
@@ -184,7 +184,38 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
                 }
             }
+        } */
+
+        for(Edge<Integer, Transport> e : edges){
+            if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){
+                TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
+                s.add(m);
+                if(player.isMrX()){
+                    //Set<Move> doubles = doubleMove(m, e.destination(), false);
+                    //s.addAll(doubles);
+                    if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 20){
+                        Set<Move> doubles = nextMoves(m, e.destination());
+                        s.addAll(doubles);
+                    }
+                }
+            }
+            if(player.isDetective()){
+                if(emptyTransportTickets(player)){
+                    pass = true;
+                }
+            } else {
+                if(emptyTransportTickets(player)){
+                    TicketMove m = new TicketMove(player, SECRET, e.destination().value());
+                    s.add(m);
+                    Set<Move> doubleSecrets = doubleMove(m, location, false);
+                    s.addAll(doubleSecrets);
+                }
+                Set<Move> secrets = secretMove(location);
+                s.addAll(secrets);
+
+            }
         }
+
         if(pass && s.isEmpty()) s.add(new PassMove(player));
         return s;
     }
@@ -215,6 +246,24 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         return moves;
     }
 
+    private Set<Move> nextMoves(TicketMove first, Node<Integer> location){
+        Set<Move> moves = new HashSet<>();
+        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+        for(Edge<Integer, Transport> e : edges){
+            TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
+            DoubleMove d = new DoubleMove(BLACK, first, second);
+            moves.add(d);
+
+            if(!e.data().equals(Transport.FERRY)){
+                TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+                DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+                moves.add(d);
+            }
+        }
+
+        return moves;
+    }
+
     private Set<Move> secretMove(Node<Integer> location){
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
@@ -222,11 +271,25 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(getPlayerTickets(BLACK, SECRET).get() >= 1){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
                 moves.add(m);
-                Set<Move> doubles = doubleMove(m, e.destination(), true);
-                moves.addAll(doubles);
+                //Set<Move> doubles = doubleMove(m, e.destination(), true);
+                //moves.addAll(doubles);
+                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 20){
+                    Set<Move> doubles = nextMoves(m, e.destination());
+                    moves.addAll(doubles);
+                }
             }
         }
         return moves;
+    }
+
+    private boolean emptyTransportTickets(Colour player){
+        if( getPlayerTickets(player, BUS).get() == 0 &&
+            getPlayerTickets(player, TAXI).get() == 0 &&
+            getPlayerTickets(player, UNDERGROUND).get() == 0)
+        {
+            return true;
+        } else return false;
+
     }
 
 
