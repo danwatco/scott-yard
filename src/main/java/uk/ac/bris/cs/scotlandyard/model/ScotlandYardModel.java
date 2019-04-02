@@ -34,6 +34,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     private List<Boolean> rounds;
     private Graph<Integer, Transport> graph;
     private List<ScotlandYardPlayer> players = new ArrayList<>();
+    private List<Spectator> spectators = new ArrayList<>();
     private Colour currentPlayer;
     private int currentPlayerIndex;
     private int round;
@@ -115,13 +116,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void registerSpectator(Spectator spectator) {
         // TODO
-        throw new RuntimeException("Implement me");
+        if(isNull(spectator)) throw new NullPointerException("Spectator is null");
+        spectators.add(spectator);
     }
 
     @Override
     public void unregisterSpectator(Spectator spectator) {
         // TODO
-        throw new RuntimeException("Implement me");
+        if(isNull(spectator)) throw new NullPointerException("Spectator is null");
+        spectators.remove(spectator);
     }
 
     @Override
@@ -267,16 +270,25 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             throw new IllegalArgumentException("Move not valid");
         } else {
             playMove(m);
-            // Update spectators
-            // Spectator.onMoveMade(V, Ticket)
             if(players.indexOf(getPlayerFromColour(getCurrentPlayer()).get()) == (players.size() - 1)){
-                // onRotationComplete
                 currentPlayer = BLACK;
+                // Update spectators
+                for(Spectator s : spectators){
+                    s.onMoveMade(this, m);
+                }
+                for(Spectator s : spectators){
+                    s.onRotationComplete(this);
+                }
+
             } else {
                 ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
                 currentPlayerIndex++;
                 currentPlayer = nextPlayer.colour();
                 Player p = nextPlayer.player();
+                // Update spectators
+                for(Spectator s : spectators){
+                    s.onMoveMade(this, m);
+                }
                 p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
             }
         }
@@ -294,7 +306,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 playTicketMove(t);
                 round++;
                 // Update spectators
-                // Spectator.onRoundStarted(V, round)
+                for(Spectator s : spectators){
+                    s.onRoundStarted(this, round);
+                }
             }
         } else {
             if(m.getClass() == PassMove.class){
@@ -331,7 +345,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public Collection<Spectator> getSpectators() {
         // TODO
-        throw new RuntimeException("Implement me");
+        return Collections.unmodifiableList(spectators);
     }
 
     @Override
@@ -356,8 +370,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         // TODO
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
-                int r = getCurrentRound(); // made this so the if statement isn't so confusing
-                if(r == 3 || r == 8 || r == 13 || r == 18 || r == 24){
+                if(getRounds().get(getCurrentRound())){
                     mrXlocation = p.location(); // updates location with current location
                     return Optional.of(mrXlocation); // returns the updated location
                 }
