@@ -208,7 +208,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges) {
-            if(!collision(e.destination().value())){
+            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get() >= 1){
                 TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
@@ -231,7 +231,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges){
 
-            if(getPlayerTickets(BLACK, SECRET).get() >= 1){
+            if(getPlayerTickets(BLACK, SECRET).get() >= 1 && !collision(e.destination().value())){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
                 if(!moves.contains(m)) moves.add(m);
                 if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 21){
