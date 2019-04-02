@@ -33,7 +33,7 @@ import javax.swing.text.html.Option;
 public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     private List<Boolean> rounds;
-    private Graph<Integer, Transport> graph;
+    private Graph<Integer, Transport> graph; // node value is an Integer (the number of the field the player is on and the edge value is Transport
     private List<ScotlandYardPlayer> players = new ArrayList<>();
     private Colour currentPlayer;
     private int round;
@@ -125,60 +125,86 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void startRotate() {
         // TODO
-//        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
-//        ScotlandYardPlayer player;
-//        if(playerO.isPresent()){
-//            player = playerO.get();
-//        } else {
-//            throw new RuntimeException("Current player does not exist");
-//        }
-//        Player current = player.player();
-//        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
-
-        Optional<ScotlandYardPlayer> player0 = getPlayerFromColour(getCurrentPlayer());
+        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
         ScotlandYardPlayer player;
-        if(player0.isPresent()) player = player0.get();
-        else throw new RuntimeException("current player is null");
-
+        if(playerO.isPresent()){
+            player = playerO.get();
+        } else {
+            throw new RuntimeException("Current player does not exist");
+        }
+        Player current = player.player();
+        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
     }
 
     private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
-//        for(ScotlandYardPlayer p : players){
-//            if(p.colour() == colour){
-//                return Optional.of(p);
-//            }
-//        }
-//        return Optional.empty();
-
+        for(ScotlandYardPlayer p : players){
+            if(p.colour() == colour){
+                return Optional.of(p);
+            }
+        }
+        return Optional.empty();
     }
 
     private Set<Move> validMove(Colour player){
-        Set<Move> s = new HashSet<>();
-        Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
-        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
-        for(Edge<Integer, Transport> e : edges){
-            Ticket p = Ticket.fromTransport(e.data());
-            int destination = e.destination().value();
-            for(Transport t : Transport.values()){
-                if(e.data() == t){
-                    if(player != BLACK){
-                        // Logic for Detectives
-                        if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
-                            TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
-                            s.add(m);
-                        } else {
-                            PassMove m = new PassMove(player);
-                            s.add(m);
-                        }
-                    } else {
-                        // Logic for MrX - Doubles & Secrets need to be handled
+//        Set<Move> s = new HashSet<>();
+//        Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
+//        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
+//        for(Edge<Integer, Transport> e : edges){
+//            Ticket p = Ticket.fromTransport(e.data());
+//            int destination = e.destination().value();
+//            for(Transport t : Transport.values()){
+//                if(e.data() == t){
+//                    if(player != BLACK){
+//                        // Logic for Detectives
+//                        if(getPlayerTickets(player, fromTransport(t)).get() >= 1){
+//                            TicketMove m = new TicketMove(player, fromTransport(t), e.destination().value());
+//                            s.add(m);
+//                        } else {
+//                            PassMove m = new PassMove(player);
+//                            s.add(m);
+//                        }
+//                    } else {
+//                        // Logic for MrX - Doubles & Secrets need to be handled
+//
+//                    }
+//
+//                }
+//            }
+//        }
+//        return s;
 
-                    }
 
+        Set<Move> setOfValidMoves = new HashSet<>();
+        Node<Integer> location = graph.getNode(getPlayerLocation(player).get()); // This creates an Integer node called location which gets the node value from the current location of the player passed into valid move from the graph.
+        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location); // this gets all the places on the map that are connected to the current node i.e. all the places that are accessible from the current position and thus all the valid moves
+        for(Edge<Integer, Transport> edge : edges){
+            ScotlandYardPlayer playerCurrent = getPlayerFromColour(player).get();
+            Ticket ticket = Ticket.fromTransport(edge.data());
+            int destination = edge.destination().value();
+            if(playerCurrent.hasTickets(ticket)){
+                TicketMove move = new TicketMove(player, ticket, destination);
+                setOfValidMoves.add(move);
+            }
+            if(playerCurrent.isMrX()){
+                if(playerCurrent.hasTickets(SECRET)){
+                    TicketMove move = new TicketMove(player, SECRET, (Integer) edge.destination().value());
+                    setOfValidMoves.add(move);
+                }
+                if(playerCurrent.hasTickets(DOUBLE)){
+                    TicketMove move = new TicketMove(player, Ticket.fromTransport((Transport) edge.data()), (Integer) edge.destination().value());
+                    setOfValidMoves.add(move);
                 }
             }
+            else{
+                PassMove move = new PassMove(player);
+                setOfValidMoves.add(move);
+            }
+
+
         }
-        return s;
+
+        // get the tickets that the player has and see if they can go to all the edges with the tickets they have
+        return setOfValidMoves;
     }
 
     @Override
