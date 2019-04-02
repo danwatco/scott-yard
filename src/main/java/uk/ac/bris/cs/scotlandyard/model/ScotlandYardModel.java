@@ -145,7 +145,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     }
 
     private Set<Move> validMove(Colour player){
-//        Set<Move> s = new HashSet<>();
         Set<Move> s = new TreeSet<>(new Comparator<Move>() {
             @Override
             public int compare(Move o1, Move o2) {
@@ -154,21 +153,23 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             }
         });
         ScotlandYardPlayer p = getPlayerFromColour(player).get();
-        Boolean pass = false;
+        boolean pass = false;
         Graph<Integer, Transport> g = graph;
         Node<Integer> location = g.getNode(p.location());
         Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
 
         for(Edge<Integer, Transport> e : edges){
             if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){
-                TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
-                s.add(m);
-                if(player.isMrX()){
-                    //Set<Move> doubles = doubleMove(m, e.destination(), false);
-                    //s.addAll(doubles);
-                    if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 21){
-                        Set<Move> doubles = nextMoves(m, e.destination());
-                        s.addAll(doubles);
+                if(!collision(e.destination().value())){
+                    TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
+                    s.add(m);
+                    if(player.isMrX()){
+                        //Set<Move> doubles = doubleMove(m, e.destination(), false);
+                        //s.addAll(doubles);
+                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 21){
+                            Set<Move> doubles = nextMoves(m, e.destination());
+                            s.addAll(doubles);
+                        }
                     }
                 }
             }
@@ -177,7 +178,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     pass = true;
                 }
             } else {
-                if(emptyTransportTickets(player) && getPlayerTickets(player, SECRET).get() >= 1){
+                if(emptyTransportTickets(player) && getPlayerTickets(player, SECRET).get() >= 1 && !collision(e.destination().value())){
                     TicketMove m = new TicketMove(player, SECRET, e.destination().value());
                     s.add(m);
                 }
@@ -200,15 +201,18 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges) {
-            TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
-            DoubleMove d = new DoubleMove(BLACK, first, second);
-            moves.add(d);
+            if(!collision(e.destination().value())){
+                TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
+                DoubleMove d = new DoubleMove(BLACK, first, second);
+                moves.add(d);
 
-            if (!e.data().equals(Transport.FERRY)) {
-                TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
-                DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
-                moves.add(ds);
+                if (!e.data().equals(Transport.FERRY)) {
+                    TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+                    DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+                    moves.add(ds);
+                }
             }
+
 
         }
 
@@ -240,6 +244,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             return true;
         } else return false;
 
+    }
+
+    private boolean collision(int newLocation){
+        for(ScotlandYardPlayer p : players){
+            if(p.location() == newLocation && p.isDetective()){
+                return true;
+            }
+        }
+        return false;
     }
 
 
