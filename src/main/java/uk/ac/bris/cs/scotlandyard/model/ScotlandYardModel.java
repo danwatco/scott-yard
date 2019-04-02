@@ -125,25 +125,31 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void startRotate() {
         // TODO
-        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
+//        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
+//        ScotlandYardPlayer player;
+//        if(playerO.isPresent()){
+//            player = playerO.get();
+//        } else {
+//            throw new RuntimeException("Current player does not exist");
+//        }
+//        Player current = player.player();
+//        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
+
+        Optional<ScotlandYardPlayer> player0 = getPlayerFromColour(getCurrentPlayer());
         ScotlandYardPlayer player;
-        if(playerO.isPresent()){
-            player = playerO.get();
-        } else {
-            throw new RuntimeException("Current player does not exist");
-        }
-        Player current = player.player();
-        current.makeMove(this, getPlayerLocation(getCurrentPlayer()).get(), validMove(getCurrentPlayer()), this );
+        if(player0.isPresent()) player = player0.get();
+        else throw new RuntimeException("current player is null");
 
     }
 
     private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
-        for(ScotlandYardPlayer p : players){
-            if(p.colour() == colour){
-                return Optional.of(p);
-            }
-        }
-        return Optional.empty();
+//        for(ScotlandYardPlayer p : players){
+//            if(p.colour() == colour){
+//                return Optional.of(p);
+//            }
+//        }
+//        return Optional.empty();
+
     }
 
     private Set<Move> validMove(Colour player){
@@ -151,6 +157,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Node<Integer> location = graph.getNode(getPlayerLocation(player).get());
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges){
+            Ticket p = Ticket.fromTransport(e.data());
+            int destination = e.destination().value();
             for(Transport t : Transport.values()){
                 if(e.data() == t){
                     if(player != BLACK){
