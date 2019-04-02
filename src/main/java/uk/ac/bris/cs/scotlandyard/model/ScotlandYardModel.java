@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.sun.prism.shader.AlphaOne_Color_Loader;
+import javafx.beans.binding.DoubleExpression;
 import org.apache.commons.lang3.ObjectUtils;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
@@ -34,8 +35,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     private Graph<Integer, Transport> graph;
     private List<ScotlandYardPlayer> players = new ArrayList<>();
     private Colour currentPlayer;
+    private int currentPlayerIndex;
     private int round;
-    private int mrXlocation = 0; // Store the location of MrX that players are allowed to see
+    private int mrXlocation; // Store the location of MrX that players are allowed to see
 
     public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
                              PlayerConfiguration mrX, PlayerConfiguration firstDetective,
@@ -105,6 +107,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
         this.currentPlayer = BLACK;
         this.round = 0;
+        this.mrXlocation = 0;
+        this.currentPlayerIndex = 0;
 
     }
 
@@ -124,6 +128,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     public void startRotate() {
         // TODO
         Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
+        currentPlayerIndex = 0;
         ScotlandYardPlayer player;
         if(playerO.isPresent()){
             player = playerO.get();
@@ -165,8 +170,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
-                        //Set<Move> doubles = doubleMove(m, e.destination(), false);
-                        //s.addAll(doubles);
                         if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 21){
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
@@ -189,7 +192,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         }
 
         if(pass && s.isEmpty()) s.add(new PassMove(player));
-
+        // hmmm why are these erroneous
         DoubleMove d1 = new DoubleMove(BLACK, TAXI, 116, TAXI, 117);
         DoubleMove d2 = new DoubleMove(BLACK, SECRET, 116, TAXI, 117);
         DoubleMove d3 = new DoubleMove(BLACK, SECRET, 116, SECRET, 117);
@@ -260,9 +263,69 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void accept(Move m){
         if(isNull(m)) throw new NullPointerException("Move was null");
-        PassMove test = new PassMove(getCurrentPlayer());
-        //if(!m.equals(test)) throw new IllegalArgumentException("Move not valid");
-        if(validMove(getCurrentPlayer()).contains(m)) {} else { throw new IllegalArgumentException("Move not valid"); };
+        if(!validMove(getCurrentPlayer()).contains(m)){
+            throw new IllegalArgumentException("Move not valid");
+        } else {
+            playMove(m);
+            // Update spectators
+            // Spectator.onMoveMade(V, Ticket)
+            if(players.indexOf(getPlayerFromColour(getCurrentPlayer()).get()) == (players.size() - 1)){
+                // onRotationComplete
+                currentPlayer = BLACK;
+            } else {
+                ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
+                currentPlayerIndex++;
+                currentPlayer = nextPlayer.colour();
+                Player p = nextPlayer.player();
+                p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
+            }
+        }
+
+    }
+
+    private void playMove(Move m){
+        TicketMove t;
+        if(m.colour() == BLACK){
+            if(m.getClass() == DoubleMove.class){
+                DoubleMove d = (DoubleMove) m;
+                playDoubleMove(d);
+            } else {
+                t = (TicketMove) m;
+                playTicketMove(t);
+                round++;
+                // Update spectators
+                // Spectator.onRoundStarted(V, round)
+            }
+        } else {
+            if(m.getClass() == PassMove.class){
+                // Pass move?
+            } else {
+                t = (TicketMove) m;
+                playTicketMove(t);
+            }
+        }
+
+
+    }
+
+    private void playTicketMove(TicketMove t){
+        ScotlandYardPlayer p = getPlayerFromColour(t.colour()).get();
+        // Remove ticket from player
+        Map<Ticket, Integer> tickets = p.tickets();
+        int current = tickets.get(t.ticket());
+        tickets.replace(t.ticket(), current -  1);
+        if(t.colour() != BLACK){
+            ScotlandYardPlayer mrX = getPlayerFromColour(BLACK).get();
+            int c = mrX.tickets().get(t.ticket());
+            mrX.tickets().replace(t.ticket(), c + 1);
+        }
+        // Update player location
+        p.location(t.destination());
+
+    }
+
+    private void playDoubleMove(DoubleMove m){
+
     }
 
     @Override
