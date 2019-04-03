@@ -117,6 +117,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     public void registerSpectator(Spectator spectator) {
         // TODO
         if(isNull(spectator)) throw new NullPointerException("Spectator is null");
+        if(spectators.contains(spectator)) throw new IllegalArgumentException("Spectator already exists");
         spectators.add(spectator);
     }
 
@@ -124,6 +125,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     public void unregisterSpectator(Spectator spectator) {
         // TODO
         if(isNull(spectator)) throw new NullPointerException("Spectator is null");
+        if(!spectators.contains(spectator)) throw new IllegalArgumentException("Spectator doesnt exist");
         spectators.remove(spectator);
     }
 
@@ -172,7 +174,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
-                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 23){
+                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 24){
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
                         }
@@ -202,12 +204,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges) {
-            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get() >= 1){
+            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
+                    >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)){
                 TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
 
-                if (!e.data().equals(Transport.FERRY)) {
+                if (!e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
                     TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
                     DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
                     moves.add(ds);
@@ -228,7 +231,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(getPlayerTickets(BLACK, SECRET).get() >= 1 && !collision(e.destination().value())){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
                 if(!moves.contains(m)) moves.add(m);
-                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 23){
+                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 24){
                     Set<Move> doubles = nextMoves(m, e.destination());
                     moves.addAll(doubles);
                 }
@@ -266,6 +269,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             playMove(m);
             if(players.indexOf(getPlayerFromColour(getCurrentPlayer()).get()) == (players.size() - 1)){
                 currentPlayer = BLACK;
+                currentPlayerIndex = 0;
                 // Update spectators
                 for(Spectator s : spectators){
                     s.onMoveMade(this, m);
@@ -277,16 +281,34 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             } else {
                 if(m.getClass() == DoubleMove.class){
                     DoubleMove d = (DoubleMove) m;
-                    round++;
+                    DoubleMove dHidden = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), 0);
+                    TicketMove t1Hidden = new TicketMove(d.colour(), d.firstMove().ticket(), 0);
+                    TicketMove t2Hidden = new TicketMove(d.colour(), d.secondMove().ticket(), 0);
                     for(Spectator s : spectators){
-                        s.onMoveMade(this, d);
-                        s.onMoveMade(this, d.firstMove());
-                        s.onRoundStarted(this, getCurrentRound());
+                        if(getRounds().get(getCurrentRound())){
+                            s.onMoveMade(this, d);
+                        } else {
+                            s.onMoveMade(this, dHidden);
+                        }
+
                     }
                     round++;
                     for(Spectator s : spectators){
-                        s.onMoveMade(this, d.secondMove());
                         s.onRoundStarted(this, getCurrentRound());
+                        if(getRounds().get(getCurrentRound())){
+                            s.onMoveMade(this, d.firstMove());
+                        } else {
+                            s.onMoveMade(this, t1Hidden);
+                        }
+                    }
+                    round++;
+                    for(Spectator s : spectators){
+                        s.onRoundStarted(this, getCurrentRound());
+                        if(getRounds().get(getCurrentRound())){
+                            s.onMoveMade(this, d.secondMove());
+                        } else {
+                            s.onMoveMade(this, t2Hidden);
+                        }
                     }
                     ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
                     currentPlayerIndex++;
@@ -299,9 +321,29 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     currentPlayer = nextPlayer.colour();
                     Player p = nextPlayer.player();
                     // Update spectators
-                    for(Spectator s : spectators){
-                        s.onMoveMade(this, m);
+                    if(m.colour() == BLACK){
+                        // Update spectators
+                        TicketMove t = (TicketMove) m;
+                        TicketMove hidden = new TicketMove(m.colour(), t.ticket(), 0);
+                        for (Spectator s : spectators){
+                            if(getRounds().get(getCurrentRound())){
+                                s.onMoveMade(this, m);
+                            } else {
+
+                                s.onMoveMade(this, hidden);
+                            }
+
+                        }
+                        round++;
+                        for(Spectator s : spectators){
+                            s.onRoundStarted(this, round);
+                        }
+                    } else {
+                        for(Spectator s : spectators){
+                            s.onMoveMade(this, m);
+                        }
                     }
+
                     p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
                 }
 
@@ -319,11 +361,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             } else {
                 t = (TicketMove) m;
                 playTicketMove(t);
-                round++;
-                // Update spectators
-                for(Spectator s : spectators){
-                    s.onRoundStarted(this, round);
-                }
             }
         } else {
             if(m.getClass() == PassMove.class){
