@@ -144,7 +144,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         // call makeMove for the current player which starts the rotation of the game
     }
 
-    private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
+    private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){ // gets object ScotlandYardPlayer from colour of player
         for(ScotlandYardPlayer p : players){
             if(p.colour() == colour){
                 return Optional.of(p);
@@ -154,24 +154,24 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     }
 
     private Set<Move> validMove(Colour player){
-        Set<Move> s = new TreeSet<>(new Comparator<Move>() {
+        Set<Move> s = new TreeSet<>(new Comparator<Move>() { // creates a new set to add valid moves to (returned at the end of method)
             @Override
             public int compare(Move o1, Move o2) {
                 if(o1.equals(o2)) return 0;
                 else return o1.hashCode() - o2.hashCode();
             }
         });
-        ScotlandYardPlayer p = getPlayerFromColour(player).get();
-        boolean pass = false;
+        ScotlandYardPlayer p = getPlayerFromColour(player).get(); // creates Player object for valid move
+        boolean pass = false; // pass is used to only add one pass move per player otherwise it would add pass move for every node
         Graph<Integer, Transport> g = graph;
-        Node<Integer> location = g.getNode(p.location());
-        Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
+        Node<Integer> location = g.getNode(p.location()); // use graph to get current position node
+        Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location); // make collection of all moves regardless of ticket
 
-        for(Edge<Integer, Transport> e : edges){
-            if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){
-                if(!collision(e.destination().value())){
-                    TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
-                    s.add(m);
+        for(Edge<Integer, Transport> e : edges){ // iterate through edges to check if that move can be made with current player tickets
+            if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){ // if player ticket count for the ticket needed to that edge is >= 1
+                if(!collision(e.destination().value())){ // if there isnt a collision with a previous players move
+                    TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value()); // create a new ticket move using the ticket
+                    s.add(m); // add that move to the set of moves
                     if(player.isMrX()){
                         if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 23){
                             Set<Move> doubles = nextMoves(m, e.destination());
