@@ -130,18 +130,18 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     @Override
     public void startRotate() {
         // TODO
-        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
+        Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer()); // creates a new optional player from current player
         currentPlayerIndex = 0;
         ScotlandYardPlayer player;
-        if(playerO.isPresent()){
-            player = playerO.get();
+        if(playerO.isPresent()){ // makes sure the optional player is not empty
+            player = playerO.get(); // sets player
         } else {
-            throw new RuntimeException("Current player does not exist");
+            throw new RuntimeException("Current player does not exist"); // throw exception if there is not a player
         }
-        Player current = player.player();
+        Player current = player.player(); // create player of type player for make move call
         if(player.isMrX()) System.out.println("Size of set " + validMove(getCurrentPlayer()).size());
         current.makeMove(this, player.location(), validMove(getCurrentPlayer()), this );
-
+        // call makeMove for the current player which starts the rotation of the game
     }
 
     private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
