@@ -173,7 +173,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
-                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 21){
+                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 23){
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
                         }
@@ -195,12 +195,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         }
 
         if(pass && s.isEmpty()) s.add(new PassMove(player));
-        // hmmm why are these erroneous
-        DoubleMove d1 = new DoubleMove(BLACK, TAXI, 116, TAXI, 117);
-        DoubleMove d2 = new DoubleMove(BLACK, SECRET, 116, TAXI, 117);
-        DoubleMove d3 = new DoubleMove(BLACK, SECRET, 116, SECRET, 117);
-        DoubleMove d4 = new DoubleMove(BLACK, TAXI, 116, SECRET, 117);
-        s.remove(d1);s.remove(d2);s.remove(d3);s.remove(d4);
+
         return s;
     }
 
@@ -234,7 +229,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(getPlayerTickets(BLACK, SECRET).get() >= 1 && !collision(e.destination().value())){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
                 if(!moves.contains(m)) moves.add(m);
-                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 21){
+                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 23){
                     Set<Move> doubles = nextMoves(m, e.destination());
                     moves.addAll(doubles);
                 }
@@ -370,9 +365,12 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         // TODO
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
-                if(getRounds().get(getCurrentRound())){
-                    mrXlocation = p.location(); // updates location with current location
-                    return Optional.of(mrXlocation); // returns the updated location
+                if(getCurrentRound() == 0) {
+                    return Optional.of(0);
+                }
+                else if(getRounds().get(getCurrentRound() - 1)){
+                        mrXlocation = p.location(); // updates location with current location
+                        return Optional.of(mrXlocation); // returns the updated location
                 }
                 else return Optional.of(mrXlocation); // only returns the location, doesnt update it
             }
