@@ -174,7 +174,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
-                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 24){
+                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 23){
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
                         }
@@ -204,19 +204,20 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges) {
-            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
-                    >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)){
-                TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
-                DoubleMove d = new DoubleMove(BLACK, first, second);
-                moves.add(d);
+            if(getCurrentRound() < 23) {
+                if(! collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
+                        >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)) {
+                    TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
+                    DoubleMove d = new DoubleMove(BLACK, first, second);
+                    moves.add(d);
 
-                if (!e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
-                    TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
-                    DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
-                    moves.add(ds);
+                    if(! e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
+                        TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+                        DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+                        moves.add(ds);
+                    }
                 }
             }
-
 
         }
 
