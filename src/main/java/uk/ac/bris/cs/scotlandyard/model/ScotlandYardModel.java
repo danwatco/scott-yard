@@ -263,8 +263,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     @Override
     public void accept(Move m){
-        if(isNull(m)) throw new NullPointerException("Move was null");
-        if(!validMove(getCurrentPlayer()).contains(m)){
+        if(isNull(m)){
+            throw new NullPointerException("Move was null");
+        } else if(!validMove(getCurrentPlayer()).contains(m)){
             throw new IllegalArgumentException("Move not valid");
         } else {
             playMove(m);
@@ -282,35 +283,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             } else {
                 if(m.getClass() == DoubleMove.class){
                     DoubleMove d = (DoubleMove) m;
-                    DoubleMove dHidden = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), 0);
-                    TicketMove t1Hidden = new TicketMove(d.colour(), d.firstMove().ticket(), 0);
-                    TicketMove t2Hidden = new TicketMove(d.colour(), d.secondMove().ticket(), 0);
-                    for(Spectator s : spectators){
-                        if(getRounds().get(getCurrentRound())){
-                            s.onMoveMade(this, d);
-                        } else {
-                            s.onMoveMade(this, dHidden);
-                        }
-
-                    }
-                    round++;
-                    for(Spectator s : spectators){
-                        s.onRoundStarted(this, getCurrentRound());
-                        if(getRounds().get(getCurrentRound())){
-                            s.onMoveMade(this, d.firstMove());
-                        } else {
-                            s.onMoveMade(this, t1Hidden);
-                        }
-                    }
-                    round++;
-                    for(Spectator s : spectators){
-                        s.onRoundStarted(this, getCurrentRound());
-                        if(getRounds().get(getCurrentRound())){
-                            s.onMoveMade(this, d.secondMove());
-                        } else {
-                            s.onMoveMade(this, t2Hidden);
-                        }
-                    }
+                    updateSpectators(d);
                     ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
                     currentPlayerIndex++;
                     currentPlayer = nextPlayer.colour();
@@ -330,10 +303,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                             if(getRounds().get(getCurrentRound())){
                                 s.onMoveMade(this, m);
                             } else {
-
                                 s.onMoveMade(this, hidden);
                             }
-
                         }
                         round++;
                         for(Spectator s : spectators){
@@ -404,6 +375,59 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         // Update location
         p.location(m.finalDestination());
 
+    }
+
+    private void updateSpectators(DoubleMove d){
+        DoubleMove dHidden = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), 0);
+        TicketMove t1Hidden = new TicketMove(d.colour(), d.firstMove().ticket(), 0);
+        TicketMove t2Hidden = new TicketMove(d.colour(), d.secondMove().ticket(), 0);
+        for(Spectator s : spectators){
+            if(getRounds().get(getCurrentRound())){
+                if(getRounds().get(getCurrentRound() + 1)){
+                    s.onMoveMade(this, d);
+                } else {
+                    DoubleMove dHidden1 = new DoubleMove(d.colour(), d.firstMove().ticket(), d.firstMove().destination(), d.secondMove().ticket(), d.firstMove().destination());
+                    s.onMoveMade(this, dHidden1);
+                }
+            } else {
+                if(getRounds().get(getCurrentRound() + 1)){
+                    DoubleMove dHidden2 = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), d.secondMove().destination());
+                    s.onMoveMade(this, dHidden2);
+                } else {
+                    s.onMoveMade(this, dHidden);
+                }
+
+            }
+        }
+        round++;
+        for(Spectator s : spectators){
+            s.onRoundStarted(this, getCurrentRound());
+            if(getRounds().get(getCurrentRound()) && getRounds().get(getCurrentRound() - 1)){
+                s.onMoveMade(this, d.firstMove());
+            } else {
+                if(getRounds().get(getCurrentRound() - 1)){
+                    s.onMoveMade(this, d.firstMove());
+                } else {
+                    s.onMoveMade(this, t1Hidden);
+                }
+
+            }
+        }
+        round++;
+        for(Spectator s : spectators){
+            s.onRoundStarted(this, getCurrentRound());
+            if(getRounds().get(getCurrentRound())){
+                s.onMoveMade(this, d.secondMove());
+            } else {
+                if(getRounds().get(getCurrentRound() - 2)){
+                    TicketMove tHidden2 = new TicketMove(d.colour(), d.secondMove().ticket(), d.firstMove().destination());
+                    s.onMoveMade(this, tHidden2);
+                } else {
+                    s.onMoveMade(this, t2Hidden);
+                }
+
+            }
+        }
     }
 
     @Override
