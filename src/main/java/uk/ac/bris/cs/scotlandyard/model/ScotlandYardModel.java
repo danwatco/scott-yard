@@ -263,7 +263,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     @Override
     public void accept(Move m){
-        if(isNull(m)){
+        if(isNull(m) || m == null){
             throw new NullPointerException("Move was null");
         } else if(!validMove(getCurrentPlayer()).contains(m)){
             throw new IllegalArgumentException("Move not valid");
@@ -283,11 +283,11 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             } else {
                 if(m.getClass() == DoubleMove.class){
                     DoubleMove d = (DoubleMove) m;
-                    updateSpectators(d);
                     ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
                     currentPlayerIndex++;
                     currentPlayer = nextPlayer.colour();
                     Player p = nextPlayer.player();
+                    updateSpectators(d);
                     p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
                 } else {
                     ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
@@ -299,16 +299,16 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                         // Update spectators
                         TicketMove t = (TicketMove) m;
                         TicketMove hidden = new TicketMove(m.colour(), t.ticket(), 0);
+                        round++;
+                        for(Spectator s : spectators){
+                            s.onRoundStarted(this, round);
+                        }
                         for (Spectator s : spectators){
                             if(getRounds().get(getCurrentRound())){
                                 s.onMoveMade(this, m);
                             } else {
                                 s.onMoveMade(this, hidden);
                             }
-                        }
-                        round++;
-                        for(Spectator s : spectators){
-                            s.onRoundStarted(this, round);
                         }
                     } else {
                         for(Spectator s : spectators){
@@ -458,7 +458,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         // TODO
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
-                if(getCurrentRound() == 0) {
+                if(getCurrentRound() < 1) {
                     return Optional.of(0);
                 }
                 else if(getRounds().get(getCurrentRound() - 1)){
