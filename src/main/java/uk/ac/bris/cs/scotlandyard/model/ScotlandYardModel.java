@@ -155,7 +155,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
     }
 
     private Set<Move> validMove(Colour player){
-        Set<Move> s = new TreeSet<>(new Comparator<Move>() {
+        Set<Move> s = new TreeSet<>(new Comparator<>() {
             @Override
             public int compare(Move o1, Move o2) {
                 if(o1.equals(o2)) return 0;
@@ -174,7 +174,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
-                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < 23){
+                        if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < getRounds().size() - 1){
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
                         }
@@ -232,7 +232,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(getPlayerTickets(BLACK, SECRET).get() >= 1 && !collision(e.destination().value())){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
                 if(!moves.contains(m)) moves.add(m);
-                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < 24){
+                if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < getRounds().size() - 1){
                     Set<Move> doubles = nextMoves(m, e.destination());
                     moves.addAll(doubles);
                 }
@@ -263,9 +263,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
     @Override
     public void accept(Move m){
-        if(isNull(m) || m == null){
-            throw new NullPointerException("Move was null");
-        } else if(!validMove(getCurrentPlayer()).contains(m)){
+        requireNonNull(m);
+        if(!(validMove(currentPlayer).contains(m))){
             throw new IllegalArgumentException("Move not valid");
         } else {
             playMove(m);
