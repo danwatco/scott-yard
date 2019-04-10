@@ -35,6 +35,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     private Graph<Integer, Transport> graph;
     private List<ScotlandYardPlayer> players = new ArrayList<>();
     private List<Spectator> spectators = new ArrayList<>();
+    private Set<Colour> playersWon = new HashSet<>();
     private Colour currentPlayer;
     private int currentPlayerIndex;
     private int round;
@@ -132,6 +133,10 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     @Override
     public void startRotate() {
         // TODO
+
+        if(isGameOver()){
+            throw new IllegalStateException("Game over before game begun!");
+        }
         Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
         currentPlayerIndex = 0;
         ScotlandYardPlayer player;
@@ -285,36 +290,24 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     @Override
     public void accept(Move m){
         requireNonNull(m);
-        if(!(validMove(currentPlayer).contains(m))){
-            throw new IllegalArgumentException("Move not valid");
-        } else {
-            m.visit(this);
-            if(getCurrentPlayer() == BLACK){
-                // Update spectators
-                for(Spectator s : spectators){
-                    s.onRotationComplete(this);
-                }
-            } else {
-                /*if(m.getClass() == DoubleMove.class){
-                    DoubleMove d = (DoubleMove) m;
-                    ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex + 1);
-                    currentPlayerIndex++;
-                    currentPlayer = nextPlayer.colour();
-                    Player p = nextPlayer.player();
-                    updateSpectators(d);
-                    p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
-                } else {
-                    ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex);
-                    Player p = nextPlayer.player();
-                    p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
-                } /*/
-                ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex);
-                Player p = nextPlayer.player();
-                p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
-
+        if(!(validMove(currentPlayer).contains(m))) throw new IllegalArgumentException("Move not valid");
+        m.visit(this);
+        if(isGameOver()){
+            for(Spectator s : spectators){
+                s.onGameOver(this, getWinningPlayers());
             }
+            return;
         }
-
+        if(getCurrentPlayer() == BLACK){
+            // Update spectators
+            for(Spectator s : spectators){
+                s.onRotationComplete(this);
+            }
+        } else {
+            ScotlandYardPlayer nextPlayer = players.get(currentPlayerIndex);
+            Player p = nextPlayer.player();
+            p.makeMove(this, nextPlayer.location(), validMove(getCurrentPlayer()), this);
+        }
     }
 
     @Override
@@ -408,59 +401,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         p.location(d.finalDestination());
     }
 
-    private void updateSpectators(DoubleMove d){
-        DoubleMove dHidden = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), 0);
-        TicketMove t1Hidden = new TicketMove(d.colour(), d.firstMove().ticket(), 0);
-        TicketMove t2Hidden = new TicketMove(d.colour(), d.secondMove().ticket(), 0);
-        for(Spectator s : spectators){
-            if(getRounds().get(getCurrentRound())){
-                if(getRounds().get(getCurrentRound() + 1)){
-                    s.onMoveMade(this, d);
-                } else {
-                    DoubleMove dHidden1 = new DoubleMove(d.colour(), d.firstMove().ticket(), d.firstMove().destination(), d.secondMove().ticket(), d.firstMove().destination());
-                    s.onMoveMade(this, dHidden1);
-                }
-            } else {
-                if(getRounds().get(getCurrentRound() + 1)){
-                    DoubleMove dHidden2 = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), d.secondMove().destination());
-                    s.onMoveMade(this, dHidden2);
-                } else {
-                    s.onMoveMade(this, dHidden);
-                }
-
-            }
-        }
-        round++;
-        for(Spectator s : spectators){
-            s.onRoundStarted(this, getCurrentRound());
-            if(getRounds().get(getCurrentRound()) && getRounds().get(getCurrentRound() - 1)){
-                s.onMoveMade(this, d.firstMove());
-            } else {
-                if(getRounds().get(getCurrentRound() - 1)){
-                    s.onMoveMade(this, d.firstMove());
-                } else {
-                    s.onMoveMade(this, t1Hidden);
-                }
-
-            }
-        }
-        round++;
-        for(Spectator s : spectators){
-            s.onRoundStarted(this, getCurrentRound());
-            if(getRounds().get(getCurrentRound())){
-                s.onMoveMade(this, d.secondMove());
-            } else {
-                if(getRounds().get(getCurrentRound() - 2)){
-                    TicketMove tHidden2 = new TicketMove(d.colour(), d.secondMove().ticket(), d.firstMove().destination());
-                    s.onMoveMade(this, tHidden2);
-                } else {
-                    s.onMoveMade(this, t2Hidden);
-                }
-
-            }
-        }
-    }
-
     @Override
     public Collection<Spectator> getSpectators() {
         // TODO
@@ -480,8 +420,12 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public Set<Colour> getWinningPlayers() {
-        // TODO
-        return Collections.unmodifiableSet(emptySet());
+        if(isGameOver()){
+            return Collections.unmodifiableSet(playersWon);
+        } else {
+            return Collections.unmodifiableSet(emptySet());
+        }
+
     }
 
     @Override
@@ -519,7 +463,41 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public boolean isGameOver() {
-        // TODO
+        int tickets = 0;
+        for(ScotlandYardPlayer p : players){
+            if(p.isDetective() && p.location() == getPlayerFromColour(BLACK).get().location()){
+                // Detectives captured MrX so have won.
+                for(int i = 1; i < players.size(); i++){
+                    playersWon.add(players.get(i).colour());
+                }
+                return true;
+            }
+            if(p.isDetective()){
+                for(Ticket t : Ticket.values()){
+                    tickets += p.tickets().get(t);
+                }
+            }
+        }
+        if(tickets == 0){
+            // MrX Wins
+            playersWon.add(BLACK);
+            return true;
+        }
+
+        if(validMove(BLACK).size() == 0 && currentPlayerIndex == 0){
+            // Detectives win as MrX ran out of tickets?
+            for(int i = 1; i < players.size(); i++){
+                playersWon.add(players.get(i).colour());
+            }
+            return true;
+        }
+
+        if(getCurrentRound() == getRounds().size() && currentPlayerIndex == 0){
+            // End of the game and detectives haven't captured MrX yet.
+            playersWon.add(BLACK);
+            return true;
+        }
+
         return false;
     }
 
