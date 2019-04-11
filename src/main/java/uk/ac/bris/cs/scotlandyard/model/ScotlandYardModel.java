@@ -220,8 +220,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             s.addAll(secrets);
         }
 
+
         // If no moves have been added to the set and pass is true, add a single pass move.
-        if(pass && s.isEmpty()) s.add(new PassMove(player));
+        if(player.isDetective() && s.isEmpty()) s.add(new PassMove(player));
 
         return s;
     }
@@ -239,14 +240,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
-
-                // Add use of secret ticket in the double move if tickets are available
-                if(! e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
-                    TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
-                    DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
-                    moves.add(ds);
-                }
             }
+            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), SECRET).get()
+                    >= 1) {
+                // Add use of secret ticket in the double move if tickets are available
+                TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+                DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+                moves.add(ds);
+            }
+
 
         }
 
