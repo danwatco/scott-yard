@@ -133,10 +133,11 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     @Override
     public void startRotate() {
         // TODO
-
-        if(isGameOver()){
+        // Check that game isn't over before it has begun.
+        if(isGameOver() && getCurrentRound() == 0){
             throw new IllegalStateException("Game over before game begun!");
         }
+        // Code to retrieve current player as getPlayerFromColour uses optionals.
         Optional<ScotlandYardPlayer> playerO = getPlayerFromColour(getCurrentPlayer());
         currentPlayerIndex = 0;
         ScotlandYardPlayer player;
@@ -145,11 +146,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         } else {
             throw new RuntimeException("Current player does not exist");
         }
+        // Take player object from the current player
         Player current = player.player();
+        // Call make move with the given parameters using 'this' as the callback as the class implements
+        // Consumer<Move> with the 'accept' method.
         current.makeMove(this, player.location(), validMove(getCurrentPlayer()), this );
 
     }
 
+    // Returns ScotlandYardPlayer object from given colour.
     private Optional<ScotlandYardPlayer> getPlayerFromColour(Colour colour){
         for(ScotlandYardPlayer p : players){
             if(p.colour() == colour){
@@ -159,7 +164,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return Optional.empty();
     }
 
+    // Generates set of valid moves for given player.
     private Set<Move> validMove(Colour player){
+        // Set uses custom comparator to ensure that there is no duplicate moves.
         Set<Move> s = new TreeSet<>(new Comparator<>() {
             @Override
             public int compare(Move o1, Move o2) {
@@ -173,13 +180,19 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         Node<Integer> location = g.getNode(p.location());
         Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
 
+        // Loop through each edge from the current player location
         for(Edge<Integer, Transport> e : edges){
+            // Check that the player has enough tickets for that transport
             if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){
+                // Check for collisions
                 if(!collision(e.destination().value())){
+                    // Create new ticket move and add to the set.
                     TicketMove m = new TicketMove(player, fromTransport(e.data()), e.destination().value());
                     s.add(m);
                     if(player.isMrX()){
+                        // If player is mrX check there is enough double tickets and that there is enough rounds left
                         if(getPlayerTickets(player, DOUBLE).get() >= 1 && getCurrentRound() < getRounds().size() - 1){
+                            // Call nextMoves function using the destination node, this will create the double moves.
                             Set<Move> doubles = nextMoves(m, e.destination());
                             s.addAll(doubles);
                         }
@@ -187,40 +200,51 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 }
             }
             if(player.isDetective()){
+                // Set pass variable to true if detective has no transport tickets left
                 if(emptyTransportTickets(player)){
                     pass = true;
                 }
             } else {
+                // If mrX has run out of transport tickets, use secret ticket instead.
                 if(emptyTransportTickets(player) && getPlayerTickets(player, SECRET).get() >= 1 && !collision(e.destination().value())){
                     TicketMove m = new TicketMove(player, SECRET, e.destination().value());
                     s.add(m);
                 }
-                Set<Move> secrets = secretMove(location);
-                s.addAll(secrets);
+
             }
         }
 
+        if(player.isMrX()){
+            // Get set of all secret moves.
+            Set<Move> secrets = secretMove(location);
+            s.addAll(secrets);
+        }
+
+        // If no moves have been added to the set and pass is true, add a single pass move.
         if(pass && s.isEmpty()) s.add(new PassMove(player));
 
         return s;
     }
 
+    // Create double moves from given first move and destination node
     private Set<Move> nextMoves(TicketMove first, Node<Integer> location){
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges) {
-            if(getCurrentRound() < 23) {
-                if(! collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
-                        >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)) {
-                    TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
-                    DoubleMove d = new DoubleMove(BLACK, first, second);
-                    moves.add(d);
+            // Check for no collision for second destination and check transport tickets.
+            // If statement uses conditional expression to make sure to check for more than 1 ticket if previous
+            // move had the same transport.
+            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
+                    >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)) {
+                TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
+                DoubleMove d = new DoubleMove(BLACK, first, second);
+                moves.add(d);
 
-                    if(! e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
-                        TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
-                        DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
-                        moves.add(ds);
-                    }
+                // Add use of secret ticket in the double move if tickets are available
+                if(! e.data().equals(Transport.FERRY) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
+                    TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+                    DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+                    moves.add(ds);
                 }
             }
 
@@ -229,15 +253,17 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return moves;
     }
 
+    // Creates all possible secret moves from a given location.
     private Set<Move> secretMove(Node<Integer> location){
         Set<Move> moves = new HashSet<>();
         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(location);
         for(Edge<Integer, Transport> e : edges){
-
+            // Only checks for secret tickets instead of individual transport
             if(getPlayerTickets(BLACK, SECRET).get() >= 1 && !collision(e.destination().value())){
                 TicketMove m = new TicketMove(BLACK, SECRET, e.destination().value());
-                if(!moves.contains(m)) moves.add(m);
+                moves.add(m);
                 if(getPlayerTickets(BLACK, DOUBLE).get() >= 1 && getCurrentRound() < getRounds().size() - 1){
+                    // Creates doubles with secret as first move
                     Set<Move> doubles = nextMoves(m, e.destination());
                     moves.addAll(doubles);
                 }
@@ -246,6 +272,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return moves;
     }
 
+    // Check that all transport tickets are empty
     private boolean emptyTransportTickets(Colour player){
         if( getPlayerTickets(player, BUS).get() == 0 &&
             getPlayerTickets(player, TAXI).get() == 0 &&
@@ -253,9 +280,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         {
             return true;
         } else return false;
-
     }
 
+    // Check that a given new location doesn't match with any detective
     private boolean collision(int newLocation){
         for(ScotlandYardPlayer p : players){
             if(p.location() == newLocation && p.isDetective()){
@@ -265,7 +292,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return false;
     }
 
-    public void nextPlayer(){
+    // Updates the current player to the next in the list, unless it is at the end then update to the beginning
+    private void nextPlayer(){
         if(players.indexOf(getPlayerFromColour(getCurrentPlayer()).get()) == (players.size() - 1)){
             currentPlayer = BLACK;
             currentPlayerIndex = 0;
@@ -277,21 +305,21 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     }
 
-    public void moveMade(Move m){
+    // Update spectators with move made
+    private void moveMade(Move m){
         for(Spectator s : spectators){
             s.onMoveMade(this, m);
         }
     }
 
-    public void endOfRound(){
-
-    }
-
+    // Consumer<Move> method to implement callback
     @Override
     public void accept(Move m){
         requireNonNull(m);
-        if(!(validMove(currentPlayer).contains(m))) throw new IllegalArgumentException("Move not valid");
+        //if(!(validMove(getCurrentPlayer()).contains(m))) throw new IllegalArgumentException("Move not valid");
+        // Visit 'this' to handle the playing of moves.
         m.visit(this);
+        // Notify spectators if game is over and exit function
         if(isGameOver()){
             for(Spectator s : spectators){
                 s.onGameOver(this, getWinningPlayers());
@@ -385,7 +413,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         for(Spectator s : spectators){
             s.onRoundStarted(this, getCurrentRound());
         }
-        if(getRounds().get(getCurrentRound())){
+        if(getRounds().get(getCurrentRound() - 1)){
             moveMade(d.secondMove());
         } else {
             if(getRounds().get(getCurrentRound() - 2)){
