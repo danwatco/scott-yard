@@ -394,6 +394,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 moveMade(hidden);
             }
         }
+        p.location(d.firstMove().destination());
         p.removeTicket(d.firstMove().ticket());
         round++;
         for(Spectator s : spectators){
@@ -410,6 +411,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             }
 
         }
+        p.location(d.finalDestination());
         p.removeTicket(d.secondMove().ticket());
         round++;
         for(Spectator s : spectators){
@@ -427,8 +429,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             }
 
         }
-        // Update location
-        p.location(d.finalDestination());
     }
 
     @Override
