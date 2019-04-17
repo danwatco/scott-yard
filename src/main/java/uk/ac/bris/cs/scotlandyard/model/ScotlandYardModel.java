@@ -167,13 +167,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     // Generates set of valid moves for given player.
     private Set<Move> validMove(Colour player){
         // Set uses custom comparator to ensure that there is no duplicate moves.
-        Set<Move> s = new TreeSet<>(new Comparator<>() {
-            @Override
-            public int compare(Move o1, Move o2) {
-                if(o1.equals(o2)) return 0;
-                else return o1.hashCode() - o2.hashCode();
-            }
-        });
+        Set<Move> s = new HashSet<>();
         ScotlandYardPlayer p = getPlayerFromColour(player).get();
         boolean pass = false;
         Graph<Integer, Transport> g = graph;
@@ -236,32 +230,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
             }
+
+
+
             if(!(collision(e.destination().value())) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
                 // Add use of secret ticket in the double move if tickets are available
                 TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
                 DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
                 moves.add(ds);
             }
-
-
-
-//            if(getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
-//                // Add use of secret ticket in the double move if tickets are available
-//                boolean collision = false;
-//                TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
-//                DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
-//                ArrayList<ScotlandYardPlayer> playersnoMrx = new ArrayList<>();
-//                for(int i = 1; i < players.size(); i++){
-//                    playersnoMrx.add(players.get(i));
-//                }
-//                for(ScotlandYardPlayer p : playersnoMrx){
-//                    if(p.location() == e.destination().value() && p.colour() != BLACK) { collision = true; System.out.println("Collision with " + p.toString()); System.out.println("cant use ticket " + ds.toString()); }
-//                }
-//                if(!collision){
-//                    moves.add(ds);
-//                }
-//
-//            }
 
 
         }
@@ -303,13 +280,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     // Check that a given new location doesn't match with any detective
     private boolean collision(int newLocation){
-        boolean collision = false;
+        boolean col = false;
         for(ScotlandYardPlayer p : players){
             if((p.location() == newLocation) && p.colour() != BLACK){
-                collision = true;
+                col = true;
             }
         }
-        return collision;
+        return col;
     }
 
     // Updates the current player to the next in the list, unless it is at the end then update to the beginning
@@ -336,7 +313,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     @Override
     public void accept(Move m){
         requireNonNull(m);
-        //if(!(validMove(getCurrentPlayer()).contains(m))) throw new IllegalArgumentException("Move not valid");
+        if(!(validMove(getCurrentPlayer()).contains(m))) throw new IllegalArgumentException("Move not valid");
         // Visit 'this' to handle the playing of moves.
         m.visit(this);
         // Notify spectators if game is over and exit function
@@ -405,10 +382,10 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             }
         } else {
             if(getRounds().get(getCurrentRound() + 1)){
-                DoubleMove hiddenFirst = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), d.secondMove().destination());
+                DoubleMove hiddenFirst = new DoubleMove(d.colour(), d.firstMove().ticket(), mrXlocation, d.secondMove().ticket(), d.secondMove().destination());
                 moveMade(hiddenFirst);
             } else {
-                DoubleMove hidden = new DoubleMove(d.colour(), d.firstMove().ticket(), 0, d.secondMove().ticket(), 0);
+                DoubleMove hidden = new DoubleMove(d.colour(), d.firstMove().ticket(), mrXlocation, d.secondMove().ticket(), mrXlocation);
                 moveMade(hidden);
             }
         }
@@ -424,7 +401,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             if(getRounds().get(getCurrentRound() - 1)){
                 moveMade(d.firstMove());
             } else {
-                TicketMove hiddenFirst = new TicketMove(d.colour(), d.firstMove().ticket(), 0);
+                TicketMove hiddenFirst = new TicketMove(d.colour(), d.firstMove().ticket(), mrXlocation);
                 moveMade(hiddenFirst);
             }
 
@@ -442,7 +419,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 TicketMove hiddenSecond = new TicketMove(d.colour(), d.secondMove().ticket(), d.firstMove().destination());
                 moveMade(hiddenSecond);
             } else {
-                TicketMove hiddenSecond = new TicketMove(d.colour(), d.secondMove().ticket(), 0);
+                TicketMove hiddenSecond = new TicketMove(d.colour(), d.secondMove().ticket(), mrXlocation);
                 moveMade(hiddenSecond);
             }
 
