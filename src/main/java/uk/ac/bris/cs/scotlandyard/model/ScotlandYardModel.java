@@ -199,12 +199,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                     }
                 }
             }
-            if(player.isDetective()){
-                // Set pass variable to true if detective has no transport tickets left
-                if(emptyTransportTickets(player)){
-                    pass = true;
-                }
-            } else {
+            if(player.isMrX()) {
                 // If mrX has run out of transport tickets, use secret ticket instead.
                 if(emptyTransportTickets(player) && getPlayerTickets(player, SECRET).get() >= 1 && !collision(e.destination().value())){
                     TicketMove m = new TicketMove(player, SECRET, e.destination().value());
@@ -235,14 +230,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             // Check for no collision for second destination and check transport tickets.
             // If statement uses conditional expression to make sure to check for more than 1 ticket if previous
             // move had the same transport.
-            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
+            if(!(collision(e.destination().value())) && getPlayerTickets(getCurrentPlayer(), fromTransport(e.data())).get()
                     >= ((first.ticket().equals(fromTransport(e.data()))) ? 2 : 1)) {
                 TicketMove second = new TicketMove(BLACK, fromTransport(e.data()), e.destination().value());
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
             }
-            if(!collision(e.destination().value()) && getPlayerTickets(getCurrentPlayer(), SECRET).get()
-                    >= 1) {
+            if(!(collision(e.destination().value())) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
                 // Add use of secret ticket in the double move if tickets are available
                 TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
                 DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
@@ -250,7 +244,29 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             }
 
 
+
+//            if(getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
+//                // Add use of secret ticket in the double move if tickets are available
+//                boolean collision = false;
+//                TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
+//                DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
+//                ArrayList<ScotlandYardPlayer> playersnoMrx = new ArrayList<>();
+//                for(int i = 1; i < players.size(); i++){
+//                    playersnoMrx.add(players.get(i));
+//                }
+//                for(ScotlandYardPlayer p : playersnoMrx){
+//                    if(p.location() == e.destination().value() && p.colour() != BLACK) { collision = true; System.out.println("Collision with " + p.toString()); System.out.println("cant use ticket " + ds.toString()); }
+//                }
+//                if(!collision){
+//                    moves.add(ds);
+//                }
+//
+//            }
+
+
         }
+
+
 
         return moves;
     }
@@ -271,6 +287,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 }
             }
         }
+
         return moves;
     }
 
@@ -286,12 +303,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     // Check that a given new location doesn't match with any detective
     private boolean collision(int newLocation){
+        boolean collision = false;
         for(ScotlandYardPlayer p : players){
-            if(p.location() == newLocation && p.isDetective()){
-                return true;
+            if((p.location() == newLocation) && p.colour() != BLACK){
+                collision = true;
             }
         }
-        return false;
+        return collision;
     }
 
     // Updates the current player to the next in the list, unless it is at the end then update to the beginning
