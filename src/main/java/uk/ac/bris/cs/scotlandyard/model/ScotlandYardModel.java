@@ -176,7 +176,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
         // Loop through each edge from the current player location
         for(Edge<Integer, Transport> e : edges){
-            // Check that the player has enough tickets for that transport
+            // Check that the player has enough tickets for the current transport in the for loop
             if(getPlayerTickets(player, fromTransport(e.data())).get() >= 1){
                 // Check for collisions
                 if(!collision(e.destination().value())){
@@ -199,17 +199,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                     TicketMove m = new TicketMove(player, SECRET, e.destination().value());
                     s.add(m);
                 }
-
             }
         }
-
         if(player.isMrX()){
             // Get set of all secret moves.
             Set<Move> secrets = secretMove(location);
             s.addAll(secrets);
         }
-
-
         // If no moves have been added to the set and pass is true, add a single pass move.
         if(player.isDetective() && s.isEmpty()) s.add(new PassMove(player));
 
@@ -230,21 +226,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 DoubleMove d = new DoubleMove(BLACK, first, second);
                 moves.add(d);
             }
-
-
-
             if(!(collision(e.destination().value())) && getPlayerTickets(getCurrentPlayer(), SECRET).get() >= 1) {
                 // Add use of secret ticket in the double move if tickets are available
                 TicketMove secondSecret = new TicketMove(BLACK, SECRET, e.destination().value());
                 DoubleMove ds = new DoubleMove(BLACK, first, secondSecret);
                 moves.add(ds);
             }
-
-
         }
-
-
-
         return moves;
     }
 
