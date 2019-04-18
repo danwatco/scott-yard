@@ -266,13 +266,12 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     // Check that a given new location doesn't match with any detective
     private boolean collision(int newLocation){
-        boolean col = false;
         for(ScotlandYardPlayer p : players){
             if((p.location() == newLocation) && p.colour() != BLACK){
-                col = true;
+                return true;
             }
         }
-        return col;
+        return false;
     }
 
     // Updates the current player to the next in the list, unless it is at the end then update to the beginning
