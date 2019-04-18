@@ -169,7 +169,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         // Set uses custom comparator to ensure that there is no duplicate moves.
         Set<Move> s = new HashSet<>();
         ScotlandYardPlayer p = getPlayerFromColour(player).get();
-        boolean pass = false;
         Graph<Integer, Transport> g = graph;
         Node<Integer> location = g.getNode(p.location());
         Collection<Edge<Integer, Transport>> edges = g.getEdgesFrom(location);
@@ -252,7 +251,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
                 }
             }
         }
-
         return moves;
     }
 
@@ -341,7 +339,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         p.location(t.destination());
         nextPlayer();
         if(t.colour() != BLACK){
-            moveMade(t);
+            moveMade(t); // if you are not mrX then update the location for the spectators
         } else {
             TicketMove hidden = new TicketMove(t.colour(), t.ticket(), mrXlocation);
             round++;
@@ -416,7 +414,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public Collection<Spectator> getSpectators() {
-        // TODO
+        // TODO DONE
         return Collections.unmodifiableList(spectators);
     }
 
@@ -433,6 +431,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public Set<Colour> getWinningPlayers() {
+        // TODO DONE
         if(isGameOver()){
             return Collections.unmodifiableSet(playersWon);
         } else {
@@ -443,7 +442,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
-        // TODO
+        // TODO DONE
         for(ScotlandYardPlayer p : players){
             if(colour == BLACK){
                 if(getCurrentRound() < 1) {
@@ -476,6 +475,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     @Override
     public boolean isGameOver() {
+        // TODO DONE
         int tickets = 0;
         for(ScotlandYardPlayer p : players){
             if(p.isDetective() && p.location() == getPlayerFromColour(BLACK).get().location()){
