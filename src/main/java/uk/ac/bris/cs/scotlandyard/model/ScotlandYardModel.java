@@ -165,7 +165,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     }
 
     // Generates set of valid moves for given player.
-    public Set<Move> validMove(Colour player){
+    private Set<Move> validMove(Colour player){
         // Set uses custom comparator to ensure that there is no duplicate moves.
         Set<Move> s = new HashSet<>();
         ScotlandYardPlayer p = getPlayerFromColour(player).get();
