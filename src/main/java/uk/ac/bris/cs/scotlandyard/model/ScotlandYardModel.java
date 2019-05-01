@@ -41,9 +41,11 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
     private int round;
     private int mrXlocation; // Store the location of MrX that players are allowed to see
 
+    // The constructor which sets up the game to be played
     public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
                              PlayerConfiguration mrX, PlayerConfiguration firstDetective,
                              PlayerConfiguration... restOfTheDetectives) {
+
         this.rounds = requireNonNull(rounds);
         this.graph = requireNonNull(graph);
 
@@ -106,6 +108,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
             players.add(p);
         }
 
+        // sets the attributes ready for the start of the game
         this.currentPlayer = BLACK;
         this.round = 0;
         this.mrXlocation = 0;
@@ -113,6 +116,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     }
 
+    // registers a spectator to observe the game
     @Override
     public void registerSpectator(Spectator spectator) {
         if(isNull(spectator)) throw new NullPointerException("Spectator is null");
@@ -120,6 +124,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         spectators.add(spectator);
     }
 
+    // unregisters a spectator from the observer list
     @Override
     public void unregisterSpectator(Spectator spectator) {
         if(isNull(spectator)) throw new NullPointerException("Spectator is null");
@@ -127,6 +132,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         spectators.remove(spectator);
     }
 
+    // starts the rotation of the game / current round
     @Override
     public void startRotate() {
         // Check that game isn't over before it has begun.
@@ -316,12 +322,14 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         }
     }
 
+    // MoveVisitor method for visiting a pass move
     @Override
     public void visit(PassMove p){
         nextPlayer();
         moveMade(p);
     }
 
+    // MoveVisitor method for visiting a ticket move
     @Override
     public void visit(TicketMove t){
         ScotlandYardPlayer p = getPlayerFromColour(t.colour()).get();
@@ -348,6 +356,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     }
 
+    // MoveVisitor method for visiting a double move
     @Override
     public void visit(DoubleMove d){
         ScotlandYardPlayer p = getPlayerFromColour(d.colour()).get();
@@ -407,11 +416,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         }
     }
 
+    // Returns a collection of current spectators
     @Override
     public Collection<Spectator> getSpectators() {
         return Collections.unmodifiableList(spectators);
     }
 
+    // Returns a list of colours which each represent a player in the game
     @Override
     public List<Colour> getPlayers() {
         List<Colour> coloursList = new ArrayList<>();
@@ -422,6 +433,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     }
 
+    // Returns a set of players that have won
     @Override
     public Set<Colour> getWinningPlayers() {
         if(isGameOver()){
@@ -432,6 +444,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
 
     }
 
+    // Returns an Optional location of a given player
     @Override
     public Optional<Integer> getPlayerLocation(Colour colour) {
         for(ScotlandYardPlayer p : players){
@@ -452,6 +465,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return Optional.empty();
     }
 
+    // Returns an Optional amount of tickets for a given player and given ticket
     @Override
     public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
         for(ScotlandYardPlayer p : players){
@@ -463,6 +477,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return Optional.empty();
     }
 
+    // Returns a boolean depending on if the game is over or not
     @Override
     public boolean isGameOver() {
         int tickets = 0;
@@ -504,24 +519,28 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, Move
         return false;
     }
 
+    // Returns the player who's turn it currently is
     @Override
     public Colour getCurrentPlayer() {
         return currentPlayer;
     }
 
+    // Returns the current round the game is in
     @Override
     public int getCurrentRound() {
         return round;
     }
 
+    // Returns a list of Booleans for the amount of rounds where true is a reveal round and false is not
     @Override
     public List<Boolean> getRounds() {
         return Collections.unmodifiableList(this.rounds);
     }
 
+    // Returns a graph the model can use as the game map
     @Override
     public Graph<Integer, Transport> getGraph() {
         return new ImmutableGraph<Integer, Transport>(this.graph);
     }
 
-}
+} // end class public ScotlandYardModel
