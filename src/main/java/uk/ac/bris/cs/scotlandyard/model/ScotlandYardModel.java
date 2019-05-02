@@ -28,7 +28,6 @@ import uk.ac.bris.cs.gamekit.graph.Node;
 
 import javax.swing.text.html.Option;
 
-// TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move>, MoveVisitor {
 
     private List<Boolean> rounds;
